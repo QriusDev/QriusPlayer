@@ -1,9 +1,59 @@
 <!DOCTYPE html>
 <html>
     <head>
+        <meta charset="utf-8"/>
+        <title>Qrius Player</title>
+        <style>
+            canvas#QriusPlayer{
+                border: 1px solid black;
+                position: absolute;
+            }
 
+            #QPContextMenu{
+                border: 1px solid black;
+                position: absolute;
+                display: none;
+                background-color: rgba(61, 29, 76, 0.484);
+                border-radius: 2px;
+                padding:10px;
+
+                list-style: none;
+            }
+            .QPContextMenuList{
+                margin: 0;
+                padding: 0;
+            }
+            .QPListItem{
+                list-style: none;
+                background-color: rgba(61, 29, 76, 0.484);
+                color: white;
+                margin-left: 0;
+                font-size: 11;
+                text-align: left;
+                font-family: 'Courier New', Courier, monospace;
+            }
+            .QPListItem:hover{
+                background-color: blue;
+                cursor: pointer;
+            }
+        </style>
     </head>
     <body>
-        <p>Hello World</p>
+        <h1> Qrius Player </h1>
+        <button onclick="toggleOverlay()">Overlay toggle</button>
+        <video id="QPVideo" width="640" height="360">
+            <source src="/ignore/kuwaiiden_youtube.mp4" type="video/mp4">
+            Your browser does not support this video tag.
+        </video>
+        <canvas id="QriusPlayer" width="640px" height="360px">
+                <h1>QriusPlayer Canvas Element</h1>
+        </canvas>
+        <div id="QPContextMenu">
+            <ul class="QPContextMenuList">
+                <li class="QPError QPListItem">Cannot load QPItems</li>
+            </ul>
+        </div>
+        <script src="drawable.js"></script>
+        <script src="index.js"></script>
     </body>
 </html>

@@ -88,6 +88,7 @@ class Timeline extends Drawable
         {
             this.seeker.x = clamp(timeline.x, timeline.x + timeline.width, mouseX);
             this.seekX = clamp(timeline.x, timeline.x + timeline.width, mouseX);
+            this.seek(this.seeker.x);
         }
 
         this.seeker.y = this.y - (seekerHeight * 0.5);
@@ -113,14 +114,13 @@ class Timeline extends Drawable
     setSeekerPosition(newPos)
     {
         this.seekX = newPos;
-        //this.seekTime 
     }
 
     seek(destX)
     {
         var processedDest = clamp(timeline.x, timeline.x + timeline.width, destX);
+        vid.currentTime = ((processedDest - timeline.x) / timeline.width) * vid.duration - 1;
         this.setSeekerPosition(processedDest);
-        vid.currentTime = ((processedDest - timeline.x) / timeline.width) * vid.duration;
     }
 }
 const timeline = new Timeline();
@@ -163,10 +163,11 @@ const SETTINGS_QUALITY = "Quality";
 const SETTINGS_SPEED = "Speed";
 const SETTINGS_DOWNLOAD = "Download";
 const SETTINGS_TOGGLE_DEBUG_MODE = "Debug";
+const MENU_BACK = "Back"; // I suspect we might have different types of parent menus
 class VideoSettings extends Drawable
 {
     opened = false;
-    settingsList = [ SETTINGS_QUALITY, SETTINGS_SPEED, SETTINGS_DOWNLOAD, SETTINGS_TOGGLE_DEBUG_MODE ];
+    settingsList = [ SETTINGS_TOGGLE_DEBUG_MODE, SETTINGS_QUALITY, SETTINGS_SPEED, SETTINGS_DOWNLOAD, MENU_BACK ];
 }
 const settings = new VideoSettings();
 
@@ -359,9 +360,11 @@ function onContextMenu(event)
 
 function openContextMenu()
 {
+    loadContextMenu();
+
     var bnds = canvas.getBoundingClientRect();
-    var menu = contextMen.getBoundingClientRect();
-    contextMen.style.top = (bnds.top + (settings.y - settings.height*4)) + "px";
+    var itemCount = 4;
+    contextMen.style.top = (bnds.top + (settings.y - settings.height * itemCount)) + "px";
     contextMen.style.left = bnds.left + settings.x +"px";
     contextMen.style.display = 'block';
     settings.opened = true;
@@ -392,7 +395,13 @@ function onMouseUp(event)
 }
 
 
-
+const menuBreadcrumbs = [SETTINGS];
+function backtrack(count = 1)
+{
+    // remove from list
+    menuBreadcrumbs.splice(menuBreadcrumbs.length - count);
+    loadMenu();
+}
 
 function loadContextMenu()
 {
@@ -410,49 +419,130 @@ function loadContextMenu()
 
     // Hide error
     var errItem = document.getElementsByClassName("QPError")[0];
-    errItem.style.display = 'none';
+    if (errItem)
+    {
+        errItem.style.display = 'none';
+    }
+}
+
+function loadQualityMenu()
+{
+    var list = contextMen.children[0];
+    list.innerHTML = "";
+    // Fill context menu with settings
+    for (const setting of settings.settingsList)
+    {
+        var settingsItem = document.createElement("li");
+        settingsItem.textContent = setting;
+        settingsItem.classList.add("QPListItem");
+        settingsItem.addEventListener('click', onContextMenuAction);
+        list.appendChild(settingsItem);
+    }
+
+    var backItem = document.createElement("li");
+    backItem.textContent = back;
+    backItem.classList.add("QPListItem");
+    backItem.addEventListener('click', )
+    list.appendChild(backItem);
+}
+
+function onClickBackItem(event)
+{
+    if (menuBreadcrumbs.length < 2)
+    {
+        closeContextMenu();
+        return;
+        //backtrack();
+    }
+
+    var currentMenu = menuBreadcrumbs.pop();
+    loadMenu();
+}
+
+function toggleDebugMode()
+{
+    console.log(inDebugMode);
+    if (inDebugMode)
+    {
+        overrideDebugSettings(false);
+        inDebugMode = false;
+    }
+    else
+    {
+        overrideDebugSettings(true);
+        inDebugMode = true;
+    }
+    return;
+}
+
+function loadMenu()
+{
+    var menuChange = false;
+    if (menuBreadcrumbs.length < 0)
+    {
+        console.error("Using breadcrumbs when a menu has not been loaded.")
+        return;
+    }
+    switch (menuBreadcrumbs[menuBreadcrumbs.length - 1])
+    {
+        case SETTINGS:  // Mainly for back button
+        {
+            break;
+        }
+        case SETTINGS_SPEED:
+        {
+            menuChange = true;
+            break;
+        }
+        case SETTINGS_QUALITY:
+        {
+            menuChange = true;
+            break;
+        }
+        case SETTINGS_DOWNLOAD:
+        {
+            var item = document.getElementById("QPVideo");
+            var sourceItem = item.querySelector('source');
+            var evoker = document.createElement('a');
+            evoker.href = sourceItem.src;
+            evoker.download = sourceItem.src;
+            evoker.style.display = 'none';
+            document.body.appendChild(evoker);
+            evoker.click();
+            document.body.removeChild(evoker);
+            console.log('Downloading video');
+            break;
+        }
+        case SETTINGS_TOGGLE_DEBUG_MODE:
+        {
+            toggleDebugMode();
+            break;
+        }
+
+        case MENU_BACK:
+        {
+            onClickBackItem();
+            break;
+        }
+    }
+
+    return menuChange;
 }
 
 function onContextMenuAction(event)
 {
     var item = event.srcElement;
     var action = item.textContent;
-    console.log(event, action);
-    switch(action)
+    var menuRequested = false;
+    
+    menuBreadcrumbs.push(action);
+    menuRequested = loadMenu();
+    console.log(menuRequested);
+    
+    // Close menu if we haven't asked for another one, for this action
+    if (!menuRequested)
     {
-        case SETTINGS_DOWNLOAD:
-        {
-            break;
-        }
-
-        case SETTINGS_QUALITY:
-        {
-            break;
-        }
-
-        case SETTINGS_SPEED:
-        {
-            break;
-        }
-
-        case SETTINGS_TOGGLE_DEBUG_MODE:
-        {
-            console.log(inDebugMode);
-            if (inDebugMode)
-            {
-                console.log(action);
-                overrideDebugSettings(false);
-                inDebugMode = false;
-            }
-            else
-            {
-                console.log(action);
-                overrideDebugSettings(true);
-                inDebugMode = true;
-            }
-            closeContextMenu();
-            break;
-        }
+        closeContextMenu();
     }
 }
 

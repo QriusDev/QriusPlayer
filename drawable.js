@@ -78,10 +78,8 @@ class Drawable
         if (flags)
         {
             var splitFlags = flags.split(',');
-            console.log(splitFlags);
             for (const flag of splitFlags)
             {
-                console.log(flag);
                 this.setDebugFlag(flag, true);
             }
         }

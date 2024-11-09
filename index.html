@@ -9,9 +9,11 @@
                 position: absolute;
             }
 
-            #QPContextMenu{
+            #QPSettingsMenu{
                 border: 1px solid black;
                 position: absolute;
+                top: 100px;
+                left: 100px;
                 display: none;
                 background-color: rgba(61, 29, 76, 0.484);
                 border-radius: 2px;
@@ -24,7 +26,7 @@
 
                 list-style: none;
             }
-            .QPContextMenuList{
+            .QPSettingsMenuList{
                 margin: 0;
                 padding: 0;
             }
@@ -45,7 +47,7 @@
     </head>
     <body>
         <h1> Qrius Player </h1>
-        <button onclick="toggleOverlay()">Overlay toggle</button>
+        <button id="debug_toggle">Overlay toggle</button>
         <video id="QPVideo" width="640" height="360">
             <source src="/ignore/kuwaiiden_youtube.mp4" type="video/mp4">
             Your browser does not support this video tag.
@@ -53,12 +55,13 @@
         <canvas id="QriusPlayer" width="640px" height="360px">
                 <h1>QriusPlayer Canvas Element</h1>
         </canvas>
-        <div id="QPContextMenu">
-            <ul class="QPContextMenuList">
+        <!-- <div id="QPSettingsMenu">
+            <ul class="QPSettingsMenuList">
                 <li class="QPError QPListItem">Cannot load QPItems</li>
             </ul>
-        </div>
+        </div> -->
         <script src="drawable.js"></script>
+        <script src="player.js"></script>
         <script src="index.js"></script>
     </body>
 </html>

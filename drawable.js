@@ -11,6 +11,7 @@ class Drawable
     #boundingBox = new BoundingBox();
     
     #hovered = false;
+    canvas = undefined;
     name = "DEFAULT";
     DEBUG_DrawBoundingBox = false;
     DEBUG_FillBoundingBox = false;
@@ -22,15 +23,23 @@ class Drawable
 
     static ALL_FLAGS = "fbb,nt,sbb";
 
-    constructor(name, context, color)
+    constructor(canvas, name, color, x, y, width, height)
     {
         this.name = name || "DEFAULT";
-        this.setTransform(0, 0, 0, 0);
-        this.color = color || "";
-        this.context = context || undefined;
-        this.#boundingBox = BoundingBox.convertToBounds(this.x, this.y, this.width, this.height);
-        QPDrawList.push(this);
-        console.log(QPDrawList);
+        this.canvas = canvas;
+        if (!canvas)
+        {
+            console.error(`A Drawable{${this.name}} is being built without a canvas.`);
+        }
+        else
+        {
+            this.setTransform(0, 0, 0, 0);
+            this.color = color || "";
+            this.context = this.canvas.getContext('2d');
+            this.#boundingBox = BoundingBox.convertToBounds(this.x, this.y, this.width, this.height);
+            QPDrawList.push(this);
+            console.log(QPDrawList);
+        }
     }
 
     draw()
@@ -271,14 +280,14 @@ class BoundingBox
 
     collidesWith(other)
     {
-        return this.residesWithin(other.topleft.x, other.topleft.y) ||
-            this.residesWithin(other.bottomright.x, other.bottomright.y) ||
-            this.residesWithin(other.topright.x, other.topright.y) ||
-            this.residesWithin(other.bottomleft.x, other.bottomleft.y);
+        return this.isOverlapping(other.topleft.x, other.topleft.y) ||
+            this.isOverlapping(other.bottomright.x, other.bottomright.y) ||
+            this.isOverlapping(other.topright.x, other.topright.y) ||
+            this.isOverlapping(other.bottomleft.x, other.bottomleft.y);
     }
 
     // Returns whether this point is within our bounding box
-    residesWithin(x, y)
+    isOverlapping(x, y)
     {
         return (this.topleft.x <= x && this.topleft.y <= y) &&
                 (this.bottomright.x >= x && this.bottomright.y >= y);

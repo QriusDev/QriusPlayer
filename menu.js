@@ -112,7 +112,6 @@ class Menu
         
         this.breadCrumbs.push(action);
         menuRequested = this.loadMenu();
-        console.log(menuRequested);
         
         // Close menu if we haven't asked for another one, for this action
         if (!menuRequested)
@@ -171,8 +170,6 @@ class Menu
         {
             this.openContextMenu();
         }
-
-        console.log(`Context menu toggled`);
     }
 
     openContextMenu()
@@ -180,7 +177,6 @@ class Menu
         this.loadMenu();
 
         var bnds = this.canvas.getBoundingClientRect();
-        console.log(bnds);
         this.element.style.top = (bnds.top + this.y) + "px";
         this.element.style.left = (bnds.left + this.x) +"px";
         this.element.style.display = 'block';

@@ -8,9 +8,16 @@ class Drawable
     #height = 0;
     #context = null;
     #color = "black";
+    visible = true;
     #boundingBox = new BoundingBox();
     
     #hovered = false;
+
+    image = undefined;
+    imageLoaded = false;
+    imageRatio = 1;
+    imageRatioConstraint = true;
+
     canvas = undefined;
     name = "DEFAULT";
     DEBUG_DrawBoundingBox = false;
@@ -69,9 +76,131 @@ class Drawable
             }
         }
         
-        this.context.save();
-        this.drawFunction();
-        this.context.restore();
+        if (this.visible)
+        {
+            this.context.save();
+            if (this.imageLoaded)
+            {
+                this.context.drawImage(this.image, this.x, this.y, this.width, this.height);
+            }
+            else
+            {
+                this.drawFunction();
+            }
+            this.context.restore();
+        }
+    }
+
+    /**
+     * Check whether the image's ratio is constrained
+     * @returns whether this drawable's image's ratio is constrained
+     */
+    shouldConstrainRatio()
+    {
+        return this.imageRatioConstraint;
+    }
+
+    /**
+     * Update the image's size based on its ratio.
+     * @param {number} [threshold=0] the margin of error for the ratio check
+     * @param {bool} [keepWidth=true] whether to keep width size and constrain the height or vice versa
+     */
+    constrainImageRatio(threshold=0, keepWidth=true)
+    {
+        if (this.imageLoaded && this.shouldConstrainRatio())
+        {
+            var originalRatio = this.imageRatio;
+            var newWidth = this.width;
+            var newHeight = this.height;
+
+            var updatedWidth = false;
+            if (this.height && !keepWidth && !Drawable.withinRatio(1 / originalRatio, this.width, this.height, threshold)) 
+                        // width/height = ratio. Turn ratio to width. Turn ratio to height
+                        // width = ratio*height; height = ratio/width;
+                        // 500w:250h = 2 ratio (2:1) => 500w / 2 = 250h => 250h * 2 = 500w
+                        // w:h = w/h ratio => w / ratio = h => h * ratio = w
+            {
+                newWidth = originalRatio * this.height;
+                console.warn(`Image updated to constrain ratio: ow:${this.width} nw:${newWidth} rat:${originalRatio} eh:${newWidth / originalRatio} h:${this.height}`);
+            }
+
+            // Check that we have not resized yet since the re-ratio is already done.
+            if (this.width && keepWidth && !Drawable.withinRatio(originalRatio, this.height, this.width, threshold))
+            {
+                newHeight = this.width / originalRatio;
+                console.warn(`Image updated to constrain ratio: oh:${this.height} nh:${newHeight} rat:${originalRatio} ew:${newHeight * originalRatio} w: ${this.width}`);
+            }
+            
+            // HACK: I have no clue why it keeps trying to re-ratio the image with a large threshold.
+            // for now, I'll just assume it ratio's correctly the first time. For optimization.
+            this.setShouldConstrainRatio(false);
+
+            // Update new values
+            this.width = newWidth;
+            this.height = newHeight;
+        }
+    }
+
+    /**
+     * Check if a value falls within the ratio of another value
+     * Note: assumes value to be the numerator position. Dividing ratio by 1 will reverse it
+     * @param {number} ratio ratio to check
+     * @param {number} value value to check
+     * @param {number} known known value to check against
+     * @param {number} threshold +/- threshold for non-exact checks (Default: 0)
+     * @returns whether this value completes the ratio
+     */
+    static withinRatio(ratio, value, known, threshold=0)
+    {
+        var expectedKnown = ratio * value;
+        return (known-threshold) <= expectedKnown && (known + threshold) >= expectedKnown;
+    }
+
+    /**
+     * Update imageConstraint property. This will stop the drawable's image from resizing
+     * when not given a well ratio'd width/height
+     * @param {bool} value 
+     */
+    setShouldConstrainRatio(value)
+    {
+        this.imageRatioConstraint = value;
+    }
+
+    setImage(url, constrain)
+    {
+        if (url == '')
+        {
+            console.error(`Error: Attempted to set image to an empty string`)
+            return;
+        }
+
+        if (!this.image)
+        {
+            this.image = new Image();
+        }
+
+        this.image.src = url;
+        this.image.addEventListener('load', (ev) => {
+            // Keep track of ratio so we can keep when given ambiguous height/width 
+            this.imageRatio = this.image.width / this.image.height;
+            if (this.width == 0)
+            {
+                this.width = this.image.width;
+            }
+            if (this.height == 0)
+            {
+                this.height = this.image.height;
+            }
+            this.imageLoaded = true;
+
+            this.setShouldConstrainRatio(constrain);
+        });
+    }
+
+    removeImage()
+    {
+        this.image.src = '';
+        this.imageLoaded = false;
     }
 
     drawFunction()
@@ -108,10 +237,12 @@ class Drawable
 
     setTransform(x, y, width, height)
     {
-        this.x = x;
-        this.y = y;
-        this.width = width;
-        this.height = height;
+        this.x = x || this.x;
+        this.y = y || this.y;
+        this.width = width || this.width;
+        this.height = height || this.height;
+
+        this.constrainImageRatio(1);
     }
 
     // Set the debug flag
@@ -124,21 +255,21 @@ class Drawable
             case 'fbb':
             {
                 this.DEBUG_FillBoundingBox = newVal;
-                console.log(`[${this.name}] Set debug FillBoundingBox to ${newVal}`);
+                console.debug(`[${this.name}] Set debug FillBoundingBox to ${newVal}`);
                 break;
             }
 
             case 'sbb':
             {
                 this.DEBUG_DrawBoundingBox = newVal;
-                console.log(`[${this.name}] Set debug DrawBoundingBox to ${newVal}`);
+                console.debug(`[${this.name}] Set debug DrawBoundingBox to ${newVal}`);
                 break;
             }
 
             case 'nt':
             {
                 this.DEBUG_DrawNameTag = newVal;
-                console.log(`[${this.name}] Set debug DrawNameTag to ${newVal}`);
+                console.debug(`[${this.name}] Set debug DrawNameTag to ${newVal}`);
                 break;
             }
 

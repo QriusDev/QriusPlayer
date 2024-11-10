@@ -12,6 +12,7 @@ class MediaTimeline extends Drawable
     seekerColor = "#eaec70";
     seekX = 0;
     seekY = 0;
+    seekerImageUrl = '';
     loaded = false;
 
     name = "Timeline Object";
@@ -31,28 +32,30 @@ class MediaTimeline extends Drawable
         var newSeekerPosition = clamp(this.x, this.x + this.width - this.seekerWidth, this.seeker.x);
         this.seeker.context = this.context;
         
+        // Get correct x value for seeker
         var md = this.player.media;
         if (!md.isPaused())
         {
-            this.seeker.x = this.x + ((md.getCurrentTime() / md.getDuration()) * this.width);
             this.seekX = this.x + ((md.getCurrentTime() / md.getDuration()) * this.width);
         }
         else
         {
-            this.seeker.x = clamp(this.x, this.x + this.width, newSeekerPosition);
-            this.seekX = clamp(this.x, this.x + this.width, newSeekerPosition); // Why does this exist?
+            this.seekX = clamp(this.x, this.x + this.width, newSeekerPosition);
         }
 
         if (this.isSeekerDragging())
         {
-            this.seeker.x = clamp(this.x, this.x + this.width, this.player.getMouse().x);
             this.seekX = clamp(this.x, this.x + this.width, this.player.getMouse().x);
-            this.seek(this.seeker.x);
+            this.seek(this.seekX);
         }
 
-        this.seeker.y = this.y - (this.seekerHeight * 0.5);
-        this.seeker.width = this.seekerWidth;
-        this.seeker.height = this.seekerHeight;
+        this.seeker.setTransform(
+            this.seekX, 
+            this.y - (this.seekerHeight * 0.5),
+            this.seekerWidth, 
+            this.seekerHeight
+        );
+
         this.seeker.color = this.seekerColor;
         this.seeker.draw();
     }
@@ -68,11 +71,37 @@ class MediaTimeline extends Drawable
         if (!this.loaded)
         {
             this.seeker = new Seeker(this.canvas, "MediaTimelineSeeker", undefined, this.x, this.y);
+            if (this.seekerImageUrl)
+            {
+                this.seeker.setImage(this.seekerImageUrl);
+            }
             this.seekX = this.x;
             this.seekY = this.y;
             this.loaded = true;
-            console.log("timeline loaded");
+            console.debug("timeline loaded");
         }
+    }
+
+    setSeekerImage(url, width, height, constrain)
+    {
+        if (!url)
+        {
+            console.error('Error: Attempting to set the seeker image with an invalid url ' + url);
+            return;
+        }
+        if (this.loaded)
+        {
+            this.seekerImageUrl = url;
+            this.seeker.setImage(this.seekerImageUrl, constrain);
+
+            this.seeker.width = width ? width : this.seeker.width;
+            this.seeker.height = height ? height : this.seeker.height;
+        }
+        else
+        {
+            this.seekerImageUrl = url;
+        }
+        
     }
 
     isSeekerDragging()
@@ -99,7 +128,6 @@ class MediaTimeline extends Drawable
     seek(destX)
     {
         var processedDest = clamp(this.x, this.x + this.width, destX);
-        console.log(this.player.media)
         this.player.media.skipTo(((processedDest - this.x) / this.width) * this.player.media.getDuration() - 1);
         this.setSeekerPosition(processedDest);
     }

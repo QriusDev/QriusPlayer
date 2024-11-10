@@ -7,6 +7,13 @@ class MediaPlayer
     timeline = {};
     settings = {};
 
+    // For media text
+    mediaName = {};
+    mediaTime = {}
+    
+    background = {};    // Shown behind the player. I want it to be customizable
+    background_scrim = {};  // Shown above the background as a design filter
+
     forceDebugMode = false;
     inDebugMode = false;
 
@@ -22,9 +29,14 @@ class MediaPlayer
         this.timeline = new MediaTimeline(this.canvas);
         this.controls = new MediaControls(this.canvas);
         this.settings = new MediaSettings(this.canvas, this.media, IDTag.getGenericIDTag('MediaSettingsObj'));
+        this.background = new QPBackground('/assets/ThemeDefault_Build.png', this.canvas, 'MediaPlayerBackground', 'rgba(0, 0, 0, 0.5)');
         this.settings.loadMenu();
         this.settings.menu.setExternalMenuFunction(SETTINGS_TOGGLE_DEBUG_MODE, this.toggleDebugMode.bind(this));
         
+        this.mediaName = new TextField(this.canvas, this.formatMediaName(this.media.getMediaTitle()), undefined, 'white');
+        this.mediaTime = new TextField(this.canvas, undefined, '--:--/--:--', 'white');
+        this.mediaTime.setFont('18px serif');
+
         this.startingPosition = {
             left: this.canvas.style.left,
             top: this.canvas.style.top,
@@ -62,6 +74,18 @@ class MediaPlayer
         {
             var timelineX = 75;
             this.context.clearRect(0, 0, 640, 360);
+
+            // Draw background
+            const backgroundY = this.calculateTimelineHeight(this.canvas.clientHeight) - 30;
+            this.background.context = this.context;
+            this.background.setTransform(
+                0,
+                backgroundY - 50,
+                this.canvas.clientWidth,
+                undefined
+            );
+            this.background.snapScrimToImage();
+            this.background.draw();
 
             // Drawing Timeline
             this.timeline.load();
@@ -109,12 +133,63 @@ class MediaPlayer
             this.settings.color = "orange";
             this.settings.draw();
 
+            // Draw played media text
+            this.mediaName.setTransform(
+                this.timeline.x,
+                this.timeline.y - 20,
+                this.timeline.width - 100,
+                50
+            );
+            this.mediaName.setLabel(this.formatMediaName(this.media.getMediaTitle()))
+            this.mediaName.draw();
+
+            // Draw current time text
+            this.mediaTime.setTransform(
+                this.timeline.x + this.timeline.width - 130,
+                this.timeline.y - 2,
+                300,
+                25
+            );
+            this.mediaTime.setLabel(this.formatMediaDuration(this.media.getCurrentTime(), this.media.getDuration()));
+            this.mediaTime.draw();
+
             window.requestAnimationFrame(this.Animate.bind(this));
         }
         else
         {
             console.error('err: browser not supported or something else went wrong.');
         }
+    }
+
+    /**
+     * Get media name and format to appropriate style
+     * @param {string} mediaName the name to format
+     * @returns the formatted name
+     */
+    formatMediaName(mediaName)
+    {
+        return `Now playing: ${mediaName}`;
+    }
+
+    formatMediaDuration(currentTime, duration)
+    {
+        return `${secondsToTimeString(currentTime)}/${secondsToTimeString(duration)}`;
+        
+    }
+
+    setSeekerImage(url, width, height, constrain=true)
+    {
+        this.timeline.setSeekerImage(url, width, height, constrain);
+    }
+
+    setBackgroundImage(url)
+    {
+        this.background.setImage(url);
+    }
+
+    setSettingsImage(url)
+    {
+        this.settings.setImage(url);
     }
 
     getMouse()
@@ -144,12 +219,12 @@ class MediaPlayer
             {
                 ++itemsHovered;
                 item.setHovered(true);
-                console.log(`[${item.name}](${item.x}, ${item.y}) is hovered by mouse @(${mX}, ${mY})`);
+                console.debug(`[${item.name}](${item.x}, ${item.y}) is hovered by mouse @(${mX}, ${mY})`);
             }
             else if (item.hovered)
             {
                 item.setHovered(false);
-                console.log(`[${item.name}](${item.x}, ${item.y}) is hovered by mouse @(${mX}, ${mY})`);
+                console.debug(`[${item.name}](${item.x}, ${item.y}) is hovered by mouse @(${mX}, ${mY})`);
             }
         }
 
@@ -176,7 +251,6 @@ class MediaPlayer
         if (this.controls.hovered)
         {
             this.controls.togglePause();
-            console.log("controls: paused toggled");
             handled = true;
         }
         if (this.settings.hovered)
@@ -233,7 +307,6 @@ class MediaPlayer
 
     toggleDebugMode()
     {
-        console.log(this.inDebugMode);
         if (this.inDebugMode)
         {
             this.overrideDebugSettings(false);
@@ -265,13 +338,10 @@ class MediaPlayer
             this.canvas.style.height = this.startingPosition.height;
             this.overlaying = false;
         }
-        
-        console.log("Overlay toggled");
     }
 
     overrideDebugSettings(enable, value = Drawable.ALL_FLAGS)
     {
-        console.log(enable, value);
         for (const item of QPDrawList)
         {
             if (enable)

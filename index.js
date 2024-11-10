@@ -10,6 +10,7 @@ const SETTINGS_TOGGLE_DEBUG_MODE = "Debug";
 const MENU_BACK = "Back"; // I suspect we might have different types of parent menus
 
 const QPlayer = new MediaPlayer(canvas, new MediaObject(vid));
+QPlayer.setSeekerImage('/assets/shield.png', 500, 500, true);
 
 const overlayToggle = document.getElementById('debug_toggle');
 overlayToggle.addEventListener('click', QPlayer.toggleOverlay.bind(QPlayer));

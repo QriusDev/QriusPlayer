@@ -1,5 +1,9 @@
 const DRAWABLE_DEFAULT_NAME = "DEFAULT";
 const QPDrawList = [];
+
+/**
+ * An entity with a size, position, and color, which may also be used as an image.
+ */
 class Drawable
 {
     #x = 0;
@@ -49,6 +53,14 @@ class Drawable
         }
     }
 
+    /**
+     * The main root draw function. drawFunction is called after converting bounds and
+     * loading debug info. 
+     * 
+     * Note: If you have an image loaded, the Drawable will not use its drawFunction
+     * even if it was overriden unless you override draw() which is a DO AT YOUR OWN RISK.
+     * I will not test changes on this function.
+     */
     draw()
     {
         this.#boundingBox = BoundingBox.convertToBounds(this.x, this.y, this.width, this.height);
@@ -166,6 +178,13 @@ class Drawable
         this.imageRatioConstraint = value;
     }
 
+    /**
+     * Set the image value of this drawable and load the image.
+     * Note: When an image is loaded, drawFunction is ignored.
+     * @param {string} url the path to the image to load
+     * @param {bool} constrain whether the image's size should be constrained to the Drawable's
+     * sizing.
+     */
     setImage(url, constrain)
     {
         if (url == '')
@@ -197,12 +216,21 @@ class Drawable
         });
     }
 
+    /**
+     * Unload the image from the Drawable
+     */
     removeImage()
     {
         this.image.src = '';
         this.imageLoaded = false;
     }
 
+    /**
+     * !OVERRIDE ME!
+     * The logic to how to draw this drawable. By default, we create a square
+     * based on the current x, y, width, height, and color. Should be overriden.
+     * @returns this drawable
+     */
     drawFunction()
     {
         this.context.fillStyle = this.#color;
@@ -211,6 +239,13 @@ class Drawable
         return this;
     }
 
+    /**
+     * Enable certain debug functionalities based on flag
+     * - fbb: Fill in the bounding box
+     * - sbb: Stroke/outline the bounding box
+     * - nt: Draw the name of the drawable
+     * @param {string} flags a comma separated list of flags
+     */
     enableDebugSettings(flags = Drawable.ALL_FLAGS)
     {
         if (flags)
@@ -223,6 +258,10 @@ class Drawable
         }
     }
 
+    /**
+     * Disable certain debug flags. SEE: enableDebugSettings for more info on flags.
+     * @param {string} flags  a comma separated list of flags
+     */
     disableDebugSettings(flags = Drawable.ALL_FLAGS)
     {
         if (flags)
@@ -235,6 +274,13 @@ class Drawable
         }
     }
 
+    /**
+     * Set the transform of the drawable
+     * @param {number} x the x-position of the drawable
+     * @param {number} y the y-position of the drawable
+     * @param {number} width the width of the drawable
+     * @param {number} height the height of the drawable
+     */
     setTransform(x, y, width, height)
     {
         this.x = x || this.x;
@@ -245,8 +291,11 @@ class Drawable
         this.constrainImageRatio(1);
     }
 
-    // Set the debug flag
-    //
+    /**
+     * Set a debug flag for certain actions in debug mode.
+     * @param {string} flag a 2-3 character flag to find and change
+     * @param {bool} newVal the new boolean value for the flag
+     */
     setDebugFlag(flag, newVal)
     {
         // activate flag
@@ -281,11 +330,18 @@ class Drawable
         }
     }
 
+    /**
+     * Define the action done when the Drawable is hovered by the mouse
+     */
     onHover()
     {
 
     }
 
+    /**
+     * Set whether the object considers itself hovered.
+     * @param {bool} value 
+     */
     setHovered(value)
     {
         this.hovered = value;
@@ -372,6 +428,10 @@ class Drawable
     }
 }
 
+/**
+ * A generic point {x, y}
+ * Note: We should use this more often.
+ */
 class Point
 {
     x = 0;
@@ -384,6 +444,9 @@ class Point
     }
 }
 
+/**
+ * A representation of the vertext locations of a box, usually surrounding some object
+ */
 class BoundingBox
 {
     #topleft = new Point(); 
@@ -399,6 +462,14 @@ class BoundingBox
         this.#bottomright = bottomright || new Point();
     }
 
+    /**
+     * Convert a point and size into a BoundingBox object.
+     * @param {number} x x positin of the bounding box
+     * @param {number} y y position of bounding box
+     * @param {number} width width of bounding box
+     * @param {number} height height of bounding box
+     * @returns a new BoundingBox object from a point and a size
+     */
     static convertToBounds(x, y, width, height)
     {
         var bounds = new BoundingBox();
@@ -409,6 +480,11 @@ class BoundingBox
         return bounds;
     }
 
+    /**
+     * Take another BoundingBox and determine whether they are overlapping
+     * @param {BoundingBox} other the other BoundingBox object
+     * @returns whether the two bounding boxes overlap one another
+     */
     collidesWith(other)
     {
         return this.isOverlapping(other.topleft.x, other.topleft.y) ||
@@ -417,7 +493,12 @@ class BoundingBox
             this.isOverlapping(other.bottomleft.x, other.bottomleft.y);
     }
 
-    // Returns whether this point is within our bounding box
+    /**
+     * Check if a point is within the bounds of this BoundingBox
+     * @param {number} x the x-position of the point
+     * @param {number} y the y-position of the point
+     * @returns 
+     */
     isOverlapping(x, y)
     {
         return (this.topleft.x <= x && this.topleft.y <= y) &&

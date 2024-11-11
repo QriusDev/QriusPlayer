@@ -1,3 +1,6 @@
+/**
+ * A text drawable used to create and manipulate on-screen text.
+ */
 class TextField extends Drawable
 {
     label = ''; // What will the textfield show
@@ -10,6 +13,7 @@ class TextField extends Drawable
         this.label = label;
     }
 
+    //override
     drawFunction()
     {
         if (this.context && this.label)

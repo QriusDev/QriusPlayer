@@ -1,3 +1,8 @@
+/**
+ * DEPRECATED
+ * I was tired of putting in the transform values in every modified constructor
+ * that extended from Drawable
+ */
 class IDTag
 {
     name = '';
@@ -30,6 +35,13 @@ class IDTag
     }
 }
 
+/**
+ * Keep a number between a min and max value. If larger, jump to max value. If less, jump to min.
+ * @param {number} min the lowest value we want to output
+ * @param {number} max the highest value we want to output
+ * @param {number} value the value we want to clamp
+ * @returns value clamped between min and max
+ */
 function clamp(min, max, value)
 {
     if (value > max)
@@ -44,6 +56,12 @@ function clamp(min, max, value)
     return value;
 }
 
+/**
+ * Convert a number of seconds into a time string that represents the seconds in
+ * hours and minutes, depending on how long the time received.
+ * @param {number} sec 
+ * @returns formatted time string in format "HH:MM:SS"
+ */
 function secondsToTimeString(sec)
 {
     var timeString = '';

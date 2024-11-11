@@ -1,3 +1,6 @@
+/**
+ * A media control that connects to the media and reports timing changes
+ */
 class MediaTimeline extends Drawable
 {
     maxTime = 0;
@@ -17,6 +20,7 @@ class MediaTimeline extends Drawable
 
     name = "Timeline Object";
 
+    // override
     drawFunction()
     {
         if (this.player == null)
@@ -60,12 +64,19 @@ class MediaTimeline extends Drawable
         this.seeker.draw();
     }
 
+    /**
+     * Connect the timeline to a media player and load important information.
+     * @param {MediaPlayer} player the player parent to receive media info from 
+     */
     connectPlayer(player)
     {
         this.player = player;
         this.load();
     }
 
+    /**
+     * Load the seeker if this is not already loaded
+     */
     load()
     {
         if (!this.loaded)
@@ -82,6 +93,13 @@ class MediaTimeline extends Drawable
         }
     }
 
+    /**
+     * Set the displayed image of the Seeker Drawable
+     * @param {String} url 
+     * @param {number} width 
+     * @param {number} height 
+     * @param {bool} constrain
+     */
     setSeekerImage(url, width, height, constrain)
     {
         if (!url)
@@ -104,27 +122,51 @@ class MediaTimeline extends Drawable
         
     }
 
+    /**
+     * Check whether the seeker is being dragged
+     * @returns Whether the seeker is in the dragging state
+     */
     isSeekerDragging()
     {
         return this.seeker.dragging;
     }
 
+    /**
+     * Set the seeker's drag state
+     * @param {bool} value 
+     */
     setSeekerDragging(value)
     {
         this.seeker.dragging = value;
     }
 
+    /**
+     * Set the seeker's X position
+     * Note: this method does not calculate based on currentTime
+     * @param {number} newPos 
+     */
     setSeekerPosition(newPos)
     {
         this.seekX = newPos;
     }
 
+    /**
+     * Track the mouse locally
+     * @param {number} mX 
+     * @param {number} mY 
+     */
     updateMousePositionInfo(mX, mY)
     {
         this.mouseX = mX;
         this.mouseY = mY;
     }
 
+    /**
+     * Seek to destX on timeline or clamp to the ends
+     * Note: This method also includes conversion from X to time
+     * Todo: Extract this conversion into its own method. It will probably be used a lot.
+     * @param {number} destX 
+     */
     seek(destX)
     {
         var processedDest = clamp(this.x, this.x + this.width, destX);

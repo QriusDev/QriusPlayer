@@ -1,3 +1,6 @@
+/**
+ * A storage object that represents a media element and methods to retrieve data.
+ */
 class MediaObject
 {
     element = undefined;
@@ -133,6 +136,12 @@ class MediaObject
         }
     }
 
+    /**
+     * Get the last section of a filepath 
+     * (which is usually the file name. hacky but whatever)
+     * @param {String} filepath 
+     * @returns Last section of a filepath
+     */
     getLocalFilename(filepath)
     {
         var fileParts = filepath.split('/');

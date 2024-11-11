@@ -1,3 +1,7 @@
+/**
+ * The settings control drawable of a MediaPlayer. A settings control
+ * is a Drawable with an HTML menu associated with it.
+ */
 class MediaSettings extends Drawable
 {
     opened = false;
@@ -14,6 +18,9 @@ class MediaSettings extends Drawable
         this.menu = new Menu(this.canvas, undefined, media, this.x, this.y);
     }
 
+    /**
+     * Load the settings menu, if it exists 
+     */
     loadMenu()
     {
         if (!this.canvas)
@@ -43,8 +50,13 @@ class MediaSettings extends Drawable
                 errItem.style.display = 'none';
             }
         }
+        else
+        {
+            console.error(`Error: Menu does not exist`);
+        }
     }
 
+    //override
     setTransform(x, y, width, height)
     {
         super.setTransform(x, y, width, height);

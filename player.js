@@ -1,3 +1,6 @@
+/**
+ * An media player
+ */
 class MediaPlayer 
 {
     media = undefined;
@@ -53,6 +56,9 @@ class MediaPlayer
         this.canvas.addEventListener("mouseup", this.onMouseUp.bind(this), false);
     }
 
+    /**
+     * Start the drawing process of all entities that are a part of the media player
+     */
     BeginDraw()
     {
         if (this.canvas && this.media)
@@ -68,6 +74,10 @@ class MediaPlayer
         }
     }
 
+    /**
+     * The actual draw function that describes the look of the MediaPlayer
+     * Todo: make the process of adding something to be drawn use a registration list
+     */
     Animate()
     {
         if (this.context)
@@ -171,32 +181,63 @@ class MediaPlayer
         return `Now playing: ${mediaName}`;
     }
 
+    /**
+     * Get the media duration in an "HH:MM:SS/HH:MM:SS" formatted time string.
+     * @param {number} currentTime The left side of the time string
+     * @param {number} duration The right side of the time string
+     * @returns the time string
+     */
     formatMediaDuration(currentTime, duration)
     {
         return `${secondsToTimeString(currentTime)}/${secondsToTimeString(duration)}`;
         
     }
 
+    /**
+     * Set the image that displays as the seeker. Bubbling this up to make changes to the 
+     * seeker much easier.
+     * @param {string} url the path of the image
+     * @param {number} width the width to make the image
+     * @param {number} height the height to make the image
+     * @param {bool} constrain Whether to constrain the image size with the Drawable's side
+     */
     setSeekerImage(url, width, height, constrain=true)
     {
         this.timeline.setSeekerImage(url, width, height, constrain);
     }
 
+    /**
+     * Set the image that displays as the background
+     * @param {string} url 
+     */
     setBackgroundImage(url)
     {
         this.background.setImage(url);
     }
 
+    /**
+     * Set the image that displays as the settings control
+     * @param {string} url 
+     */
     setSettingsImage(url)
     {
         this.settings.setImage(url);
     }
 
+    /**
+     * Get mouse x and y {x, y}
+     * @returns the mouse x and y in an object. Properties are named accordingly.
+     */
     getMouse()
     {
         return {x: this.mouseX, y: this.mouseY};
     }
 
+    /**
+     * Based on the mouse position on the window, process where we are in our
+     * canvas.
+     * @param {Event} event the invoking event
+     */
     trackMousePosition(event)
     {
         if (this.canvas)
@@ -209,6 +250,11 @@ class MediaPlayer
         }
     }
 
+    /**
+     * Tell items that are drawn, whether they are being hovered by the mouse.
+     * @param {number} mX mouse x
+     * @param {number} mY mouse y
+     */
     reportHoverEvents(mX, mY)
     {
         var itemsHovered = 0;
@@ -240,6 +286,10 @@ class MediaPlayer
         }
     }
 
+    /**
+     * On click for inside elements
+     * @param {Event} event 
+     */
     onClick(event)
     {
         var handled = false;
@@ -268,6 +318,10 @@ class MediaPlayer
         }
     }
 
+    /**
+     * On mouse down
+     * @param {Event} event 
+     */
     onMouseDown(event)
     {
         if (this.timeline.hovered)
@@ -287,6 +341,10 @@ class MediaPlayer
         }
     }
 
+    /**
+     * On mouse up
+     * @param {Event} event 
+     */
     onMouseUp(event)
     {
         if (this.timeline.isSeekerDragging())
@@ -305,6 +363,10 @@ class MediaPlayer
         this.onMouseUp(event);
     }
 
+    /**
+     * Tell the player to toggle debug mode, which activates all debug drawing
+     * in the drawn items.
+     */
     toggleDebugMode()
     {
         if (this.inDebugMode)
@@ -319,6 +381,9 @@ class MediaPlayer
         }
     }
 
+    /**
+     * DEBUG ONLY: Tell the player to move to a certain position on screen to overlay.
+     */
     toggleOverlay()
     {
         if (!this.overlaying)
@@ -340,6 +405,11 @@ class MediaPlayer
         }
     }
 
+    /**
+     * Loop through all drawn items and force their debug settings to change
+     * @param {bool} enable whether to enable the debug setting
+     * @param {string} value a comma separated string of flags to modify
+     */
     overrideDebugSettings(enable, value = Drawable.ALL_FLAGS)
     {
         for (const item of QPDrawList)
@@ -355,11 +425,25 @@ class MediaPlayer
         }
     }
 
+    /**
+     * Based on the canvas width, make the timeline a bit smaller than that
+     * Note: we need to make the timeline entirely customizable so users should be able to
+     * change the timeline's width freely.
+     * @param {number} canvasWidth 
+     * @returns processed timeline width
+     */
     calculateTimelineWidth(canvasWidth)
     {
         return canvasWidth * 0.75;
     }
 
+    /**
+     * Based on the canvas height, make the timeline a bit smaller than that
+     * Note: we need to make the timeline entirely customizable so users should be able to
+     * change the timeline's height freely.
+     * @param {number} canvasHeight 
+     * @returns processed timeline height
+     */
     calculateTimelineHeight(canvasHeight)
     {
         return canvasHeight - 10; 

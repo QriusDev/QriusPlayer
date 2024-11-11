@@ -28,7 +28,7 @@ class QPBackground extends Drawable
         );
     }
 
-    // override
+    //override
     drawFunction()
     {
         if (this.imgBackground && this.scrimBackground)
@@ -38,12 +38,13 @@ class QPBackground extends Drawable
         }
     }
 
-    // override
+    //override
     setImage(url, constrain)
     {
         this.imgBackground.setImage(url, constrain);
     }
 
+    //override
     setTransform(x, y, width, height)
     {
         super.setTransform(x, y, width, height);

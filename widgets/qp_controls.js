@@ -1,3 +1,7 @@
+/**
+ * The play and pause control for a piece of media
+ * Todo: Enhance this to be any type of control that has some action function
+ */
 class MediaControls extends Drawable
 {
     isPaused = true;
@@ -7,6 +11,7 @@ class MediaControls extends Drawable
 
     name = "Video Controls Object";
 
+    //override
     drawFunction()
     {
         this.img.context = this.context;
@@ -16,6 +21,9 @@ class MediaControls extends Drawable
         this.context.drawImage(this.img, this.x, this.y, this.width, this.height);
     }
 
+    /**
+     * Toggle the pause state of the media
+     */
     togglePause()
     {
         this.isPaused = !this.isPaused;

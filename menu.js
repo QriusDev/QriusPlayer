@@ -1,3 +1,6 @@
+/**
+ * A menu object that references a generated list element in the DOM
+ */
 class Menu
 {
     canvas = undefined;
@@ -18,6 +21,10 @@ class Menu
         this.element = element || this.getDefaultElement();
     }
 
+    /**
+     * Retrieve the element of this object and create one if it does not already exist.
+     * @returns the list element associated with this menu
+     */
     getDefaultElement()
     {
         if (!this.element)
@@ -99,11 +106,23 @@ class Menu
         return menuChange;
     }
 
+    /**
+     * Add functionality to this menu external to it.
+     * Basically used to attach the menu to all of the menus
+     * @param {string} settingName the name of the setting to append functionality to
+     * @param {function()} settingFunction the function to invoke with setting is clicked
+     */
     setExternalMenuFunction(settingName, settingFunction)
     {
         this.propertyCallbackMap[settingName] = settingFunction;
     }
 
+    /**
+     * The reaction to the menu item being invoked
+     * Todo: Rename to something more descriptive of the actual functionality. 
+     * this is technically not the "context menu"
+     * @param {Event} event the event that invoked this method
+     */
     onContextMenuAction(event)
     {
         var item = event.srcElement;
@@ -120,6 +139,10 @@ class Menu
         }
     }
 
+    /**
+     * The reaction to the back option being selected
+     * @param {Event} event the event that invoked this method
+     */
     onClickBackItem(event)
     {
         if (this.breadCrumbs.length < 2)
@@ -131,6 +154,11 @@ class Menu
         var currentMenu = this.backtrack();
     }
 
+    /**
+     * Go back {count} menu pages in this menu
+     * @param {number} count the amount of menu pages to go back by
+     * @returns 
+     */
     backtrack(count = 1)
     {
         // remove from list
@@ -139,6 +167,9 @@ class Menu
         return menusPassed;
     }
 
+    /**
+     * Load the quality menu options
+     */
     loadQualityMenu()
     {
         var list = this.element.children[0];
@@ -160,6 +191,10 @@ class Menu
         list.appendChild(backItem);
     }
 
+    /**
+     * The reaction to this menu being invoked 
+     * @param {*} event the event that invoked this method
+     */
     onContextMenu(event)
     {
         if (this.opened)
@@ -172,6 +207,9 @@ class Menu
         }
     }
 
+    /**
+     * Open the context menu
+     */
     openContextMenu()
     {
         this.loadMenu();
@@ -186,6 +224,9 @@ class Menu
         this.breadCrumbs.push(SETTINGS);
     }
 
+    /**
+     * Close the context menu
+     */
     closeContextMenu()
     {
         this.element.style.display = 'none';

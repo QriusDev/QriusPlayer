@@ -12,6 +12,7 @@ class MediaTimeline extends Drawable
     seekerWidth = 25;
     seekerHeight = 25;
     seeker = undefined;
+    seekerTail = undefined;
     seekerColor = "#eaec70";
     seekX = 0;
     seekY = 0;
@@ -36,6 +37,7 @@ class MediaTimeline extends Drawable
         var newSeekerPosition = clamp(this.x, this.x + this.width - this.seekerWidth, this.seeker.x);
         this.seeker.context = this.context;
         
+        
         // Get correct x value for seeker
         var md = this.player.media;
         if (!md.isPaused())
@@ -59,8 +61,10 @@ class MediaTimeline extends Drawable
             this.seekerWidth, 
             this.seekerHeight
         );
+        // this.seekerTail.setTransform(width=this.seekX + (seeker.width/2));
 
         this.seeker.color = this.seekerColor;
+        this.seekerTail.draw();
         this.seeker.draw();
     }
 
@@ -75,13 +79,14 @@ class MediaTimeline extends Drawable
     }
 
     /**
-     * Load the seeker if this is not already loaded
+     * Load the seeker and tail if this is not already loaded
      */
     load()
     {
         if (!this.loaded)
         {
             this.seeker = new Seeker(this.canvas, "MediaTimelineSeeker", undefined, this.x, this.y);
+            this.seekerTail = new SeekerTail(this.canvas, "TimelineSeekerTail", "blue", this.x, this.y);
             if (this.seekerImageUrl)
             {
                 this.seeker.setImage(this.seekerImageUrl);
@@ -165,7 +170,7 @@ class MediaTimeline extends Drawable
      * Seek to destX on timeline or clamp to the ends
      * Note: This method also includes conversion from X to time
      * Todo: Extract this conversion into its own method. It will probably be used a lot.
-     * @param {number} destX 
+     * @param {number} destX
      */
     seek(destX)
     {

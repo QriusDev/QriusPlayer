@@ -80,6 +80,28 @@ class MediaObject
     }
 
     /**
+     * Pause the media
+     */
+    pause()
+    {
+        if (this.element.pause)
+        {
+            this.element.pause();
+        }
+    }
+
+    /**
+     * Play the media, if playable.
+     */
+    play()
+    {
+        if (this.element.play)
+        {
+            this.element.play();
+        }
+    }
+
+    /**
      * Get is the media paused
      * @returns whether the media is paused
      */

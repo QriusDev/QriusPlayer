@@ -1,7 +1,7 @@
 /**
  * An media player
  */
-class MediaPlayer 
+class MediaPlayer extends QPCanvas
 {
     media = undefined;
     canvas = undefined;
@@ -23,14 +23,19 @@ class MediaPlayer
     overlaying = false;
     startingPosition = {};
     
-    constructor(canvasHandle, media)
+    constructor(canvasHandle, media, layerCount=10)
     {
+        super(canvasHandle, layerCount);
+
         this.canvas = canvasHandle;
         this.media = media;
         this.context = this.canvas.getContext('2d');
         
         this.timeline = new MediaTimeline(this.canvas);
+        
         this.controls = new MediaControls(this.canvas);
+        this.controls.setMedia(this.media);
+
         this.settings = new MediaSettings(this.canvas, this.media, IDTag.getGenericIDTag('MediaSettingsObj'));
         this.background = new QPBackground('/assets/ThemeDefault_Build.png', this.canvas, 'MediaPlayerBackground', 'rgba(0, 0, 0, 0.5)');
         this.settings.loadMenu();
@@ -46,6 +51,8 @@ class MediaPlayer
             width: this.canvas.style.width,
             height: this.canvas.style.height
         }
+
+        this.setDefaultStage();
 
         this.canvas.addEventListener("mousemove", this.trackMousePosition.bind(this), false);
         this.canvas.addEventListener("mouseenter", this.trackMousePosition.bind(this), false);
@@ -82,10 +89,26 @@ class MediaPlayer
     {
         if (this.context)
         {
-            var timelineX = 75;
-            this.context.clearRect(0, 0, 640, 360);
+            this.context.clearRect(0, 0, this.canvas.clientWidth, this.canvas.clientHeight);
+            this.draw();
 
-            // Draw background
+            window.requestAnimationFrame(this.Animate.bind(this));
+        }
+        else
+        {
+            console.error('err: browser not supported or something else went wrong.');
+        }
+    }
+
+    /**
+     * 
+     */
+    setDefaultStage()
+    {
+        var timelineX = 75;
+
+        // Background
+        this.registerWidget(this.background, 1, () => {
             const backgroundY = this.calculateTimelineHeight(this.canvas.clientHeight) - 30;
             this.background.context = this.context;
             this.background.setTransform(
@@ -95,10 +118,11 @@ class MediaPlayer
                 undefined
             );
             this.background.snapScrimToImage();
-            this.background.draw();
+        });
 
-            // Drawing Timeline
-            this.timeline.load();
+        // Timeline and state function
+        this.timeline.load();
+        this.registerWidget(this.timeline, undefined, () => {
             this.timeline.context = this.context;
             this.timeline.setTransform(
                 timelineX,
@@ -107,22 +131,30 @@ class MediaPlayer
                 10
             );
             this.timeline.color = "#b1b1b1";
-            this.timeline.draw();
+        });
 
-            // Seeker Tail
+        // Seeker Tail
+        // HACK: until we have the seeker tail checked in
+        var seekerTail = {};
+        seekerTail.visible = true;
+        seekerTail.draw = () => {
             this.context.fillStyle = "#eaec70";
             this.context.fillRect(
                 timelineX, 
                 this.calculateTimelineHeight(this.canvas.clientHeight), 
-                this.timeline.seeker.x - timelineX, 
+                this.timeline.seeker.x - timelineX + (this.timeline.seeker.width / 2), 
                 this.calculateTimelineHeight(this.canvas.clientHeight)
             );
+        }
+        this.registerWidget(seekerTail, undefined, ()=>{});
+        this.registerWidget(this.timeline.seeker, undefined, ()=>{});
 
-            // padding
-            var paddingX = 10;
-            var paddingY = 5;
+        // padding
+        var paddingX = 10;
+        var paddingY = 5;
 
-            // Drawing Player Controls
+        // Player Controls
+        this.registerWidget(this.controls, this.getDefaultLayer()+1, () => {
             this.controls.context = this.context;
             this.controls.setTransform(
                 this.timeline.x - 25 + (-paddingX),
@@ -131,8 +163,9 @@ class MediaPlayer
                 25
             );
             this.controls.color = "black";
-            this.controls.draw();
+        });
 
+        this.registerWidget(this.settings, this.getDefaultLayer()+1, () => {
             this.settings.context = this.context;
             this.settings.setTransform(
                 this.timeline.x + this.timeline.width + paddingX,
@@ -141,9 +174,11 @@ class MediaPlayer
                 this.controls.height
             );
             this.settings.color = "orange";
-            this.settings.draw();
+        });
 
-            // Draw played media text
+        var textLayer = 3;
+        // Media identifier text
+        this.registerWidget(this.mediaName, textLayer, () => {
             this.mediaName.setTransform(
                 this.timeline.x,
                 this.timeline.y - 20,
@@ -151,9 +186,10 @@ class MediaPlayer
                 50
             );
             this.mediaName.setLabel(this.formatMediaName(this.media.getMediaTitle()))
-            this.mediaName.draw();
+        });
 
-            // Draw current time text
+        // Current time text
+        this.registerWidget(this.mediaTime, textLayer, () => {
             this.mediaTime.setTransform(
                 this.timeline.x + this.timeline.width - 130,
                 this.timeline.y - 2,
@@ -161,14 +197,7 @@ class MediaPlayer
                 25
             );
             this.mediaTime.setLabel(this.formatMediaDuration(this.media.getCurrentTime(), this.media.getDuration()));
-            this.mediaTime.draw();
-
-            window.requestAnimationFrame(this.Animate.bind(this));
-        }
-        else
-        {
-            console.error('err: browser not supported or something else went wrong.');
-        }
+        });
     }
 
     /**
@@ -189,8 +218,7 @@ class MediaPlayer
      */
     formatMediaDuration(currentTime, duration)
     {
-        return `${secondsToTimeString(currentTime)}/${secondsToTimeString(duration)}`;
-        
+        return `${QPUtility.secondsToTimeString(currentTime)}/${QPUtility.secondsToTimeString(duration)}`;
     }
 
     /**

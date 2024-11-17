@@ -8,6 +8,7 @@ class MediaControls extends Drawable
     playImg = "assets/play.png";
     pauseImg = "assets/pause.png";
     img = new Image();
+    media = undefined;
 
     name = "Video Controls Object";
 
@@ -26,14 +27,25 @@ class MediaControls extends Drawable
      */
     togglePause()
     {
+        if (!this.media)
+        {
+            console.error('Media object not set in controls.')
+            return;
+        }
+
         this.isPaused = !this.isPaused;
         if (this.isPaused)
         {
-            vid.pause();
+            this.media.pause();
         }
         else
         {
-            vid.play();
+            this.media.play();
         }
+    }
+
+    setMedia(media)
+    {
+        this.media = media;
     }
 }

@@ -33,7 +33,7 @@ class MediaTimeline extends Drawable
         this.context.fillRect(this.x, this.y, this.width, this.height);
         
         // Draw seeker
-        var newSeekerPosition = clamp(this.x, this.x + this.width - this.seekerWidth, this.seeker.x);
+        var newSeekerPosition = QPUtility.clamp(this.x, this.x + this.width - this.seekerWidth, this.seeker.x);
         this.seeker.context = this.context;
         
         // Get correct x value for seeker
@@ -44,12 +44,12 @@ class MediaTimeline extends Drawable
         }
         else
         {
-            this.seekX = clamp(this.x, this.x + this.width, newSeekerPosition);
+            this.seekX = QPUtility.clamp(this.x, this.x + this.width, newSeekerPosition);
         }
 
         if (this.isSeekerDragging())
         {
-            this.seekX = clamp(this.x, this.x + this.width, this.player.getMouse().x);
+            this.seekX = QPUtility.clamp(this.x, this.x + this.width, this.player.getMouse().x);
             this.seek(this.seekX);
         }
 
@@ -61,7 +61,6 @@ class MediaTimeline extends Drawable
         );
 
         this.seeker.color = this.seekerColor;
-        this.seeker.draw();
     }
 
     /**
@@ -147,6 +146,7 @@ class MediaTimeline extends Drawable
      */
     setSeekerPosition(newPos)
     {
+        this.seeker.x = newPos;
         this.seekX = newPos;
     }
 
@@ -169,7 +169,7 @@ class MediaTimeline extends Drawable
      */
     seek(destX)
     {
-        var processedDest = clamp(this.x, this.x + this.width, destX);
+        var processedDest = QPUtility.clamp(this.x, this.x + this.width, destX);
         this.player.media.skipTo(((processedDest - this.x) / this.width) * this.player.media.getDuration() - 1);
         this.setSeekerPosition(processedDest);
     }

@@ -36,44 +36,50 @@ class IDTag
 }
 
 /**
- * Keep a number between a min and max value. If larger, jump to max value. If less, jump to min.
- * @param {number} min the lowest value we want to output
- * @param {number} max the highest value we want to output
- * @param {number} value the value we want to clamp
- * @returns value clamped between min and max
+ * Utility class
  */
-function clamp(min, max, value) 
+class QPUtility
 {
-  if (value > max) 
+    /**
+     * Keep a number between a min and max value. If larger, jump to max value. If less, jump to min.
+     * @param {number} min the lowest value we want to output
+     * @param {number} max the highest value we want to output
+     * @param {number} value the value we want to clamp
+     * @returns value clamped between min and max
+     */
+    static clamp(min, max, value)
     {
-        value = max;
-    } 
-  else if (value < min) 
+        if (value > max)
+        {
+            value = max;
+        }
+        else if (value < min)
+        {
+            value = min;
+        }
+    
+        return value;
+    }
+    
+    /**
+     * Convert a number of seconds into a time string that represents the seconds in
+     * hours and minutes, depending on how long the time received.
+     * @param {number} sec 
+     * @returns formatted time string in format "HH:MM:SS"
+     */
+    static secondsToTimeString(sec)
     {
-        value = min;
-    } 
-
-    return value;
-}
-
-/**
- * Convert a number of seconds into a time string that represents the seconds in
- * hours and minutes, depending on how long the time received.
- * @param {number} sec
- * @returns formatted time string in format "HH:MM:SS"
- */
-function secondsToTimeString(sec) 
-{
-    let h = Math.floor(sec / 3600);
-    let m = Math.floor((sec % 3600) / 60);
-    let s = sec % 60;
-
-    let hrs = Math.floor(h) > 0 ? Math.floor(h) + ":" : "";
-    let mins = 
-        Math.floor(h) > 0 
-            ? Math.floor(m).toString().padStart(2, "0")
-            : Math.floor(m).toString().padStart(1, "0");
-    let secs = Math.floor(s).toString().padStart(2, "0");
-
-    return `${hrs}${mins}:${secs}`;
+      let h = Math.floor(sec / 3600);
+      let m = Math.floor((sec % 3600) / 60);
+      let s = sec % 60;
+  
+      let hrs = Math.floor(h) > 0 ? Math.floor(h) + ":" : "";
+      let mins = 
+          Math.floor(h) > 0 
+              ? Math.floor(m).toString().padStart(2, "0")
+              : Math.floor(m).toString().padStart(1, "0");
+      let secs = Math.floor(s).toString().padStart(2, "0");
+  
+      return `${hrs}${mins}:${secs}`;
+    }
 }

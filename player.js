@@ -134,7 +134,7 @@ class MediaPlayer extends QPCanvas
         });
 
         // Seeker Tail
-        // HACK: until we have the seeker tail checked in
+        // TODO: Remove these lines when the seeker tail class is made
         var seekerTail = {};
         seekerTail.visible = true;
         seekerTail.draw = () => {

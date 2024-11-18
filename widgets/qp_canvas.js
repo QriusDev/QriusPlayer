@@ -4,7 +4,7 @@
 class QPCanvas
 {
     handle = undefined;
-    width = 0;// CONSTANTS
+    width = 0;
     height = 0;
     screen = [];    // A representation of the screen filled with a list of QPCanvasLayers
 

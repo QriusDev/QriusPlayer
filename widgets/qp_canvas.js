@@ -6,15 +6,15 @@ class QPCanvas
     handle = undefined;
     width = 0;
     height = 0;
-    screen = [];    // A representation of the screen filled with a list of QPCanvasLayers
+    screen = [];    // Array<QPCanvasLayer> A representation of the screen filled with a list of QPCanvasLayers
 
     constructor(canvas, layerCount=10)
     {
         if (canvas)
         {
-            this.width = canvas.clientWidth;
-            this.height = canvas.clientHeight;
             this.handle = canvas;
+            this.width = this.handle.clientWidth;
+            this.height = this.handle.clientHeight;
         }
 
         // Initialize the screen with some layers
@@ -35,7 +35,6 @@ class QPCanvas
     {
         if (layer <= this.screen.length && widget.draw)
         {
-            console.log('Registering...');
             if (!this.screen[layer-1].addWidget(widget, stateFunction))
             {
                 console.error(`Layer{${layer}} is unavailable. Try to add to another layer.`);
@@ -54,6 +53,15 @@ class QPCanvas
     getLayerCount()
     {
         return this.screen.length;
+    }
+
+    /**
+     * Get the canvas element handle
+     * @returns handle to the canvas element
+     */
+    getCanvas()
+    {
+        return this.handle;
     }
 
     /**
@@ -117,6 +125,9 @@ class QPCanvasLayer
 
     /**
      * Add a widget to the drawArray
+     * @param {Function} stateFunction what properties to specify. Animation should be able to be done here
+     * @param {Drawable} widget a drawable
+     * @returns whether the widget was successfully added
      */
     addWidget(widget, stateFunction)
     {
@@ -125,7 +136,11 @@ class QPCanvasLayer
         {
             var widgetInfo = {widget, stateFunction};
             this.drawArray.push(widgetInfo);
-            console.log('Widget added')
+            // Tag with a destroy function
+            widget.Destroy = () => {
+                widget.visible = false;
+                this.drawArray.splice(this.drawArray.length - 1);
+            };
             return true;
         }
         else

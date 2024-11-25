@@ -1,2 +1,5 @@
 /ignore
 .prettierignore
+
+qplaylist.json
+blob_*

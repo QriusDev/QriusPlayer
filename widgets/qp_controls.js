@@ -15,11 +15,14 @@ class MediaControls extends Drawable
     //override
     drawFunction()
     {
-        this.img.context = this.context;
-        this.img.src = (this.isPaused) ? this.playImg : this.pauseImg;
-        this.img.width = this.width;
-        this.img.height = this.height;
-        this.context.drawImage(this.img, this.x, this.y, this.width, this.height);
+        if (this.media)
+        {
+            this.img.context = this.context;
+            this.img.width = this.width;
+            this.img.height = this.height;
+            this.context.drawImage(this.img, this.x, this.y, this.width, this.height);
+            this.setState(this.isPaused);
+        }
     }
 
     /**
@@ -33,17 +36,24 @@ class MediaControls extends Drawable
             return;
         }
 
-        this.isPaused = !this.isPaused;
-        if (this.isPaused)
-        {
-            this.media.pause();
-        }
-        else
-        {
-            this.media.play();
-        }
+        this.media.togglePlayPause();
+        this.setState(this.media.element.paused);
     }
 
+    /**
+     * Update the controls image based on supoplied paused state
+     * @param {bool} isPaused  
+     */
+    setState(isPaused)
+    {
+        this.isPaused = isPaused;
+        this.img.src = (this.isPaused) ? this.playImg : this.pauseImg;
+    }
+
+    /**
+     * Set the monitored media object
+     * @param {MediaObject} media the monitored media object 
+     */
     setMedia(media)
     {
         this.media = media;

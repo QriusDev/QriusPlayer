@@ -24,6 +24,11 @@ class QPMediaMap {
     throw new Error("getType() must be implemented");
   }
 
+  // Returns boolean indicating if media is currently paused
+  isPaused() {
+    throw new Error("isPaused() must be implemented");
+  }
+
   // Returns boolean indicating if media is currently playing
   isPlaying() {
     throw new Error("isPlaying() must be implemented");

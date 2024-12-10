@@ -3,64 +3,82 @@
  */
 class MediaPlayer extends QPCanvas
 {
-    media = undefined;
-    canvas = undefined;
     context = undefined;
+    fileInputElement = undefined;
+    startingPosition = {};  // Starting transform info
+    
+    // Widgets/Controls
+    background = {};    // Shown behind the player. I want it to be customizable
+    background_scrim = {};  // Shown above the background as a design filter
     controls = {};
     timeline = {};
     settings = {};
-
-    // For media text
-    mediaName = {};
-    mediaTime = {}
     
-    background = {};    // Shown behind the player. I want it to be customizable
-    background_scrim = {};  // Shown above the background as a design filter
+    // Media
+    playlist = []; // List of media objects to play
+    playlistFile = './qplaylist.json';
+    currentMedia = undefined;
+    mediaNameTextField = {};
+    mediaTimeTextField = {}
+    
+    // Settings
+    isAutoplaying = true;
+    isShuffling = false;
+    isLoopingMedia = false;
+    isLoopingPlaylist = true;
+    
+    // Delays/Timers
+    mediaEndAutoplayDelay = undefined;
+    mediaEndAutoplayDelayTime = 100;
+    mediaSkipPlayDelay = undefined;
+    mediaSkipPlayDelayTime = 1;
 
+    // Debug
     forceDebugMode = false;
     inDebugMode = false;
-
-    overlaying = false;
-    startingPosition = {};
     
-    constructor(canvasHandle, media, layerCount=10)
+    constructor(canvas, layerCount=10)
     {
-        super(canvasHandle, layerCount);
+        super(canvas, layerCount);
 
-        this.canvas = canvasHandle;
-        this.media = media;
-        this.context = this.canvas.getContext('2d');
+        this.context = this.handle.getContext('2d');
         
-        this.timeline = new MediaTimeline(this.canvas);
+        this.timeline = new MediaTimeline(this.handle);
         
-        this.controls = new MediaControls(this.canvas);
-        this.controls.setMedia(this.media);
-
-        this.settings = new MediaSettings(this.canvas, this.media, IDTag.getGenericIDTag('MediaSettingsObj'));
-        this.background = new QPBackground('/assets/ThemeDefault_Build.png', this.canvas, 'MediaPlayerBackground', 'rgba(0, 0, 0, 0.5)');
+        this.controls = new MediaControls(this.handle);
+        
+        this.settings = new MediaSettings(this.handle, IDTag.getGenericIDTag('MediaSettingsObj'));
+        this.background = new QPBackground('/assets/ThemeDefault_Build.png', this.handle, 'MediaPlayerBackground', 'rgba(0, 0, 0, 0.5)');
         this.settings.loadMenu();
         this.settings.menu.setExternalMenuFunction(SETTINGS_TOGGLE_DEBUG_MODE, this.toggleDebugMode.bind(this));
         
-        this.mediaName = new TextField(this.canvas, this.formatMediaName(this.media.getMediaTitle()), undefined, 'white');
-        this.mediaTime = new TextField(this.canvas, undefined, '--:--/--:--', 'white');
-        this.mediaTime.setFont('18px serif');
-
         this.startingPosition = {
-            left: this.canvas.style.left,
-            top: this.canvas.style.top,
-            width: this.canvas.style.width,
-            height: this.canvas.style.height
+            left: this.handle.style.left,
+            top: this.handle.style.top,
+            width: this.handle.style.width,
+            height: this.handle.style.height
         }
 
+        // Create playlist importer
+        this.fileInputElement = document.createElement("input");
+        this.fileInputElement.id = FILE_IMPORT_ID;
+        this.fileInputElement.type = "file";
+        this.fileInputElement.multiple = true;
+        document.body.insertBefore(this.fileInputElement, this.handle);
+        
+        // Load the playlist
+        this.LoadPlaylist();
         this.setDefaultStage();
 
-        this.canvas.addEventListener("mousemove", this.trackMousePosition.bind(this), false);
-        this.canvas.addEventListener("mouseenter", this.trackMousePosition.bind(this), false);
-        this.canvas.addEventListener("mouseleave", this.trackMousePosition.bind(this), false);
-
-        this.canvas.addEventListener("click", this.onClick.bind(this), false);
-        this.canvas.addEventListener("mousedown", this.onMouseDown.bind(this), false);
-        this.canvas.addEventListener("mouseup", this.onMouseUp.bind(this), false);
+        this.fileInputElement.addEventListener("change", this.onFileImport.bind(this), false);
+        this.handle.addEventListener("mousemove", this.trackMousePosition.bind(this), false);
+        this.handle.addEventListener("mouseenter", this.trackMousePosition.bind(this), false);
+        this.handle.addEventListener("mouseleave", this.trackMousePosition.bind(this), false);
+        
+        this.handle.addEventListener("click", this.onClick.bind(this), false);
+        this.handle.addEventListener("mousedown", this.onMouseDown.bind(this), false);
+        this.handle.addEventListener("mouseup", this.onMouseUp.bind(this), false);
+        document.addEventListener("keyup", this.onKeypress.bind(this), false);
     }
 
     /**
@@ -68,9 +86,9 @@ class MediaPlayer extends QPCanvas
      */
     BeginDraw()
     {
-        if (this.canvas && this.media)
+        if (this.handle)
         {
-            this.context = this.canvas.getContext('2d');
+            this.context = this.handle.getContext('2d');
             this.timeline.connectPlayer(this);
 
             window.requestAnimationFrame(this.Animate.bind(this));
@@ -89,7 +107,7 @@ class MediaPlayer extends QPCanvas
     {
         if (this.context)
         {
-            this.context.clearRect(0, 0, this.canvas.clientWidth, this.canvas.clientHeight);
+            this.context.clearRect(0, 0, this.handle.clientWidth, this.handle.clientHeight);
             this.draw();
 
             window.requestAnimationFrame(this.Animate.bind(this));
@@ -109,12 +127,12 @@ class MediaPlayer extends QPCanvas
 
         // Background
         this.registerWidget(this.background, 1, () => {
-            const backgroundY = this.calculateTimelineHeight(this.canvas.clientHeight) - 30;
+            const backgroundY = this.calculateTimelineHeight(this.handle.clientHeight) - 30;
             this.background.context = this.context;
             this.background.setTransform(
                 0,
                 backgroundY - 50,
-                this.canvas.clientWidth,
+                this.handle.clientWidth,
                 undefined
             );
             this.background.snapScrimToImage();
@@ -126,8 +144,8 @@ class MediaPlayer extends QPCanvas
             this.timeline.context = this.context;
             this.timeline.setTransform(
                 timelineX,
-                this.calculateTimelineHeight(this.canvas.clientHeight),
-                this.calculateTimelineWidth(this.canvas.clientWidth),
+                this.calculateTimelineHeight(this.handle.clientHeight),
+                this.calculateTimelineWidth(this.handle.clientWidth),
                 10
             );
             this.timeline.color = "#b1b1b1";
@@ -141,9 +159,9 @@ class MediaPlayer extends QPCanvas
             this.context.fillStyle = "#eaec70";
             this.context.fillRect(
                 timelineX, 
-                this.calculateTimelineHeight(this.canvas.clientHeight), 
+                this.calculateTimelineHeight(this.handle.clientHeight), 
                 this.timeline.seeker.x - timelineX + (this.timeline.seeker.width / 2), 
-                this.calculateTimelineHeight(this.canvas.clientHeight)
+                this.calculateTimelineHeight(this.handle.clientHeight)
             );
         }
         this.registerWidget(seekerTail, undefined, ()=>{});
@@ -174,29 +192,6 @@ class MediaPlayer extends QPCanvas
                 this.controls.height
             );
             this.settings.color = "orange";
-        });
-
-        var textLayer = 3;
-        // Media identifier text
-        this.registerWidget(this.mediaName, textLayer, () => {
-            this.mediaName.setTransform(
-                this.timeline.x,
-                this.timeline.y - 20,
-                this.timeline.width - 100,
-                50
-            );
-            this.mediaName.setLabel(this.formatMediaName(this.media.getMediaTitle()))
-        });
-
-        // Current time text
-        this.registerWidget(this.mediaTime, textLayer, () => {
-            this.mediaTime.setTransform(
-                this.timeline.x + this.timeline.width - 130,
-                this.timeline.y - 2,
-                300,
-                25
-            );
-            this.mediaTime.setLabel(this.formatMediaDuration(this.media.getCurrentTime(), this.media.getDuration()));
         });
     }
 
@@ -268,9 +263,9 @@ class MediaPlayer extends QPCanvas
      */
     trackMousePosition(event)
     {
-        if (this.canvas)
+        if (this.handle)
         {
-            var rect = this.canvas.getBoundingClientRect();
+            var rect = this.handle.getBoundingClientRect();
             this.mouseX = event.pageX - rect.left;
             this.mouseY = event.pageY - rect.top;
     
@@ -286,19 +281,26 @@ class MediaPlayer extends QPCanvas
     reportHoverEvents(mX, mY)
     {
         var itemsHovered = 0;
-        for (const item of QPDrawList)
+        for (const screenLayer of this.screen)
         {
-            let isHovering = item.boundingBox.isOverlapping(mX, mY);
-            if (isHovering)
+            for (const item of screenLayer.drawArray)
             {
-                ++itemsHovered;
-                item.setHovered(true);
-                console.debug(`[${item.name}](${item.x}, ${item.y}) is hovered by mouse @(${mX}, ${mY})`);
-            }
-            else if (item.hovered)
-            {
-                item.setHovered(false);
-                console.debug(`[${item.name}](${item.x}, ${item.y}) is hovered by mouse @(${mX}, ${mY})`);
+                var widget = item.widget;
+                if (widget.boundingBox)
+                {
+                    let isHovering = widget.boundingBox.isOverlapping(mX, mY);
+                    if (isHovering)
+                    {
+                        ++itemsHovered;
+                        widget.setHovered(true);
+                        console.debug(`[${widget.name}](${widget.x}, ${widget.y}) is hovered by mouse @(${mX}, ${mY})`);
+                    }
+                    else if (widget.hovered)
+                    {
+                        widget.setHovered(false);
+                        console.debug(`[${widget.name}](${widget.x}, ${widget.y}) is hovered by mouse @(${mX}, ${mY})`);
+                    }
+                }
             }
         }
 
@@ -328,7 +330,14 @@ class MediaPlayer extends QPCanvas
         }
         if (this.controls.hovered)
         {
-            this.controls.togglePause();
+            if (this.currentMedia != undefined)
+            {
+                this.controls.togglePause();
+            }
+            else
+            {
+                this.LoadPlaylist();
+            }
             handled = true;
         }
         if (this.settings.hovered)
@@ -392,6 +401,77 @@ class MediaPlayer extends QPCanvas
     }
 
     /**
+     * What to do when a key is pressed
+     * @param {KeyboardEvent} event the keyboard event 
+     */
+    onKeypress(event)
+    {
+        switch(event.key.toLowerCase())
+        {
+            // Play/pause toggle
+            case " ":
+            {
+                if (this.currentMedia != undefined)
+                {
+                    this.currentMedia.togglePlayPause();
+                }
+                break;
+            }
+
+            // Next media item
+            case "arrowright":
+            {
+                this.skipMedia();
+                break;
+            }
+
+            // Previous media item
+            case "arrowleft":
+            {
+                this.prevMedia();
+                break;
+            }
+
+            // Toggle shuffling
+            case "s":
+            {
+                this.isShuffling = !this.isShuffling;
+                console.log(`Shuffling: ${this.isShuffling}`);
+                break;
+            }
+        }
+    }
+
+    /**
+     * Event when files have been selected
+     * @param {Event} event 
+     */
+    onFileImport(event)
+    {
+        const files = event.target.files;
+        const importedFiles = [];
+        for (const file of files)
+        {
+            console.log(file);
+            const jsonMediaObject = {
+                Type: MediaObject.GetTypeFromString(file.type),
+                Src: '/ignore/' + file.name,
+                Domain: 'local',
+                isFolder: false
+            };
+
+            importedFiles.push(jsonMediaObject);
+        }
+
+        this.processPlaylistFileContents(importedFiles);
+        if (this.playlist.length > 0)
+        {
+            this.UpdatePlaylist(importedFiles);
+            this.LoadPlaylist();
+        }
+    }
+
+    /**
      * Tell the player to toggle debug mode, which activates all debug drawing
      * in the drawn items.
      */
@@ -406,30 +486,6 @@ class MediaPlayer extends QPCanvas
         {
             this.overrideDebugSettings(true);
             this.inDebugMode = true;
-        }
-    }
-
-    /**
-     * DEBUG ONLY: Tell the player to move to a certain position on screen to overlay.
-     */
-    toggleOverlay()
-    {
-        if (!this.overlaying)
-        {
-            var vidlocation = this.media.getMediaBoundingRect();
-            this.canvas.style.left = vidlocation.left + "px";
-            this.canvas.style.top = vidlocation.top + "px";
-            this.canvas.style.width = vidlocation.width + "px";
-            this.canvas.style.height = vidlocation.height + "px";
-            this.overlaying = true;
-        }
-        else
-        {
-            this.canvas.style.left = this.startingPosition.left;
-            this.canvas.style.top = this.startingPosition.top;
-            this.canvas.style.width = this.startingPosition.width;
-            this.canvas.style.height = this.startingPosition.height;
-            this.overlaying = false;
         }
     }
 
@@ -475,5 +531,290 @@ class MediaPlayer extends QPCanvas
     calculateTimelineHeight(canvasHeight)
     {
         return canvasHeight - 10; 
+    }
+
+    /**
+     * Load the playlist file
+     * @returns the resulting playlist
+     */
+    async LoadPlaylist()
+    {
+        // Check if we have cache
+        var cache = QPUtility.getCookie(PLAYLIST_COOKIE_KEY);
+        if (cache)
+        {
+            console.log(`Trying to load cached playlist {${cache}}`);
+            this.playlistFile = cache;
+        }
+        else
+        {
+            console.log(`Loading default playlist {${this.playlistFile}}`);
+        }
+
+        const request = new Request(this.playlistFile);
+        const response = await fetch(request);
+        const json = await response.json();
+        this.processPlaylistFileContents(json);
+        this.loadMedia(0);
+        return this.playlist;
+    }
+
+    /**
+     * Get the playlist
+     * @returns the playlist
+     */
+    getPlaylist()
+    {
+        return this.playlist;
+    }
+
+    /**
+     * Get the currently loaded media
+     * @returns The currently loaded media
+     */
+    getCurrentMedia()
+    {
+        return this.currentMedia;
+    }
+
+    /**
+     * Load a new piece of media in the playlist
+     * @param {int} playlistIndex which media item to load 
+     * @returns whether it was successful
+     */
+    loadMedia(playlistIndex, forcePaused=false)
+    {
+        if (this.playlist.length <= playlistIndex)
+        {
+            console.log("Load requested, No media available.", this.playlist)
+            return false;
+        }
+
+        // We had a video before, so remove.
+        var oldMediaModified = false;
+        if (this.currentMedia != undefined)
+        {
+            this.mediaNameTextField.Destroy();
+            this.mediaTimeTextField.Destroy();
+
+            let currentMediaSource = document.getElementById(this.currentMedia.element.id);
+            this.controls.media = undefined;
+            currentMediaSource.remove();
+            oldMediaModified = true;
+        }
+        
+        const mediaItem = this.playlist[playlistIndex];
+        this.controls.media = mediaItem;
+        this.controls.setState(true);
+        
+        // What to do when the media considers itself to have ended.
+        mediaItem.onMediaEndedCallback = () => {
+            if (this.isAutoplaying)
+            {
+                if (!this.mediaEndAutoplayDelay)
+                {
+                    this.songEndAutoplayDelay = setTimeout(() => {
+                        this.skipMedia();
+                        this.songEndAutoplayDelay = undefined;  // Reset after done
+                    }, this.mediaEndAutoplayDelayTime);
+                }
+            }
+        };
+
+        mediaItem.onPlayCallback = (event) => {
+            if (this.controls.media == mediaItem)
+            {
+                this.controls.setState(false);
+            }
+        }
+        mediaItem.onPauseCallback = (event) => {
+            if (this.controls.media == mediaItem)
+            {
+                this.controls.setState(true);
+            }
+        }
+
+        mediaItem.attachToDOM();
+        if (mediaItem.element.width)
+        {
+            this.handle.width = mediaItem.element.width;
+            this.handle.height = mediaItem.element.height;
+        }
+
+        this.mediaNameTextField = new TextField(this.handle, this.formatMediaName(mediaItem.getMediaTitle()), undefined, 'white');
+        this.mediaTimeTextField = new TextField(this.handle, undefined, '--:--/--:--', 'white');
+        
+        this.mediaTimeTextField.setFont('18px serif');
+        this.mediaNameTextField.media = mediaItem;
+        this.mediaTimeTextField.media = mediaItem;
+
+        var textLayer = 3;
+        // Media identifier text
+        this.registerWidget(this.mediaNameTextField, textLayer, () => {
+            this.mediaNameTextField.setTransform(
+                this.timeline.x,
+                this.timeline.y - 20,
+                this.timeline.width - 100,
+                50
+            );
+            this.mediaNameTextField.setLabel(this.formatMediaName(mediaItem.getMediaTitle()))
+        });
+
+        // Current time text
+        this.registerWidget(this.mediaTimeTextField, textLayer, () => {
+            this.mediaTimeTextField.setTransform(
+                this.timeline.x + this.timeline.width - 130,
+                this.timeline.y - 2,
+                300,
+                25
+            );
+            this.mediaTimeTextField.setLabel(this.formatMediaDuration(mediaItem.getCurrentTime(), mediaItem.getDuration()));
+        });
+
+        // Snap to video
+        var mediaBounds = mediaItem.getMediaBoundingRect();
+        this.handle.style.left = mediaBounds.left + "px";
+        this.handle.style.top = mediaBounds.top + "px";
+        this.handle.style.width = mediaBounds.width + "px";
+        this.handle.style.height = mediaBounds.height + "px";
+
+        // Setup current media property to keep track 
+        this.currentMedia = mediaItem;
+        this.currentMedia.index = playlistIndex;
+        
+        // If we're autoplaying and we've already loaded in before, play
+        if (!forcePaused && this.currentMedia.playBeginning && this.isAutoplaying && oldMediaModified)
+        {
+            this.currentMedia.playBeginning();
+        }
+        return true;
+    }
+
+    /**
+     * Skip current media and jump to a random one in the list
+     * @returns whether this was a success
+     */
+    shuffleCurrentMediaItem()
+    {
+        // For now, pick a random number in the range of the playlist
+        // later we'll have based on the history list and frequency forgiveness
+        return this.loadMedia(Math.floor(Math.random()*100) % this.playlist.length);
+    }
+
+    /**
+     * Skip media only if there's another piece of media to load up
+     * @returns whether this was a success
+     */
+    skipCurrentMediaItem()
+    {
+        if (this.currentMedia.index < this.playlist.length - 1)
+        {
+            return this.loadMedia(this.currentMedia.index+1);
+        }
+        else
+        {
+            // If we're looping the playlist, wrap
+            if (this.isLoopingPlaylist)
+            {
+                return this.loadMedia(0);
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Skip the current media item in the playlist
+     * if isLoopingPlaylist, wrap
+     * @returns whether this was a success
+     */
+    skipMedia()
+    {
+        if (this.currentMedia != undefined)
+        {
+            if (this.isShuffling)
+            {
+                return this.shuffleCurrentMediaItem();
+            }
+            else
+            {
+                return this.skipCurrentMediaItem();
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Go to the previous media item in the playlist
+     * if isLoopingPlaylist, wrap
+     * @returns whether this was a success
+     */
+    prevMediaItem()
+    {
+        if (this.currentMedia.index != 0)
+        {
+            this.loadMedia(this.currentMedia.index - 1);
+            return true;
+        }
+        else if (this.isLoopingPlaylist)
+        {
+            this.loadMedia(this.playlist.length - 1);
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Go to the previous media item in the playlist, if available
+     * if isLoopingPlaylist, wrap
+     * @returns whether this was a success
+     */
+    prevMedia()
+    {
+        return this.prevMediaItem();
+    }
+
+    /**
+     * Process what we pull from the playlist file
+     * @param {JSONObject} input 
+     */
+    processPlaylistFileContents(input)
+    {
+        this.clearPlaylist();
+        for (const item of input)
+        {
+            var mediaObj = MediaObject.ConvertToType(item);
+            if (mediaObj != undefined)
+            {
+                this.playlist.push(mediaObj);
+            }
+        }
+    }
+
+    /**
+     * Clear the playlist
+     */
+    clearPlaylist()
+    {
+        this.playlist = [];
+    }
+
+    /**
+     * Update the playlist json file
+     */
+    UpdatePlaylist(jsonMediaObjectList)
+    {
+        const playlistBlob = new Blob([JSON.stringify(jsonMediaObjectList, null, 2)], {type: 'application/json'});
+        const downloadLocation = window.URL.createObjectURL(playlistBlob);
+
+        // format: blob:http://127.0.0.1:5501/66532b4a-85a1-4417-b24d-9ec14973fc25
+        MediaObject.InvokeDownload(downloadLocation, (event) => {
+            var savedSrc = event.target.download;
+            var newPath = savedSrc
+                            .replace(/:|\//g, '_');
+            this.playlistFile = `./${newPath}`;
+
+            // Cache file location so we can refresh
+            QPUtility.setCookie('playlist_path', this.playlistFile);
+        });
     }
 }

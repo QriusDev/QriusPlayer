@@ -12,9 +12,8 @@ class Menu
     x = 0;
     y = 0;
 
-    constructor(canvas, element, media, x, y)
+    constructor(canvas, element, x, y)
     {
-        this.media = media;
         this.canvas = canvas;
         this.x = x;
         this.y = y;
@@ -104,6 +103,15 @@ class Menu
         }
 
         return menuChange;
+    }
+
+    /**
+     * Set the media object to control
+     * @param {MediaObject} media The media to control
+     */
+    setMedia(media)
+    {
+        this.media = media;
     }
 
     /**

@@ -37,8 +37,8 @@ class MediaTimeline extends Drawable
         this.seeker.context = this.context;
         
         // Get correct x value for seeker
-        var md = this.player.media;
-        if (!md.isPaused())
+        var md = this.player.currentMedia;
+        if (md != undefined && !md.isPaused())
         {
             this.seekX = this.x + ((md.getCurrentTime() / md.getDuration()) * this.width);
         }
@@ -169,8 +169,16 @@ class MediaTimeline extends Drawable
      */
     seek(destX)
     {
-        var processedDest = QPUtility.clamp(this.x, this.x + this.width, destX);
-        this.player.media.skipTo(((processedDest - this.x) / this.width) * this.player.media.getDuration() - 1);
-        this.setSeekerPosition(processedDest);
+        var currentMedia = this.player.getCurrentMedia();
+        if (currentMedia != undefined)
+        {
+            var processedDest = QPUtility.clamp(this.x, this.x + this.width, destX);
+            currentMedia.skipTo(((processedDest - this.x) / this.width) * currentMedia.getDuration() - 1);
+            this.setSeekerPosition(processedDest);
+        }
+        else
+        {
+            console.error('Tried to seek when no video is loaded.')
+        }
     }
 }

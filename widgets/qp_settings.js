@@ -9,13 +9,13 @@ class MediaSettings extends Drawable
     canvas = undefined;
     settingsList = [ SETTINGS_TOGGLE_DEBUG_MODE, SETTINGS_QUALITY, SETTINGS_SPEED, SETTINGS_DOWNLOAD, MENU_BACK ];
 
-    constructor(canvas, media, idTag)
+    constructor(canvas, idTag)
     {
         super(canvas, idTag.name, idTag.color, idTag.x, idTag.y, idTag.width, idTag.height)
         this.canvas = canvas;
         this.x = idTag.x;
         this.y = idTag.y;
-        this.menu = new Menu(this.canvas, undefined, media, this.x, this.y);
+        this.menu = new Menu(this.canvas, undefined, this.x, this.y);
     }
 
     /**

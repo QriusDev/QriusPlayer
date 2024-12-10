@@ -6,16 +6,17 @@ const QPDrawList = [];
  */
 class Drawable
 {
-    #x = 0;
-    #y = 0;
-    #width = 0;
-    #height = 0;
-    #context = null;
-    #color = "black";
+    x = 0;
+    y = 0;
+    width = 0;
+    height = 0;
+    context = null;
+    color = "black";
     visible = true;
-    #boundingBox = new BoundingBox();
+    requestedRemoval = false;
+    boundingBox = new BoundingBox();
     
-    #hovered = false;
+    hovered = false;
 
     image = undefined;
     imageLoaded = false;
@@ -47,7 +48,7 @@ class Drawable
             this.setTransform(0, 0, 0, 0);
             this.color = color || "";
             this.context = this.canvas.getContext('2d');
-            this.#boundingBox = BoundingBox.convertToBounds(this.x, this.y, this.width, this.height);
+            this.boundingBox = BoundingBox.convertToBounds(this.x, this.y, this.width, this.height);
             QPDrawList.push(this);
             console.log(QPDrawList);
         }
@@ -63,28 +64,28 @@ class Drawable
      */
     draw()
     {
-        this.#boundingBox = BoundingBox.convertToBounds(this.x, this.y, this.width, this.height);
+        this.boundingBox = BoundingBox.convertToBounds(this.x, this.y, this.width, this.height);
         
         if (this.DEBUG_DrawBoundingBox)
         {
-            this.#context.lineWidth = (this.#hovered) ? this.DEBUG_HoverLineWidth : this.DEBUG_LineWidth;
+            this.context.lineWidth = (this.hovered) ? this.DEBUG_HoverLineWidth : this.DEBUG_LineWidth;
 
             if (this.DEBUG_FillBoundingBox)
             {
-                this.#context.strokeStyle = "black";
-                this.#context.fillRect(this.x, this.y, this.width, this.height);
+                this.context.strokeStyle = "black";
+                this.context.fillRect(this.x, this.y, this.width, this.height);
             }
 
-            this.#context.strokeStyle = "black";
-            this.#context.strokeRect(this.x, this.y, this.width, this.height);
+            this.context.strokeStyle = "black";
+            this.context.strokeRect(this.x, this.y, this.width, this.height);
 
             if (this.DEBUG_DrawNameTag)
             {
-                this.#context.fillStyle = "green";
-                this.#context.textAlign = "center";
-                var textSize = (this.#hovered) ? this.DEBUG_HoverTextSize : this.DEBUG_TextSize;
-                this.#context.font = `${textSize}px serif`;
-                this.#context.fillText(this.name, this.x + (this.#width/2), this.y - 3);
+                this.context.fillStyle = "green";
+                this.context.textAlign = "center";
+                var textSize = (this.hovered) ? this.DEBUG_HoverTextSize : this.DEBUG_TextSize;
+                this.context.font = `${textSize}px serif`;
+                this.context.fillText(this.name, this.x + (this.width/2), this.y - 3);
             }
         }
         
@@ -233,7 +234,7 @@ class Drawable
      */
     drawFunction()
     {
-        this.context.fillStyle = this.#color;
+        this.context.fillStyle = this.color;
         this.context.fillRect(this.x, this.y, this.width, this.height);
 
         return this;
@@ -346,86 +347,6 @@ class Drawable
     {
         this.hovered = value;
     }
-
-    get hovered()
-    {
-        return this.#hovered;
-    }
-
-    set hovered(value)
-    {
-        this.#hovered = value;
-    }
-
-    get color()
-    {
-        return this.#color;
-    }
-
-    set color(value)
-    {
-        this.#color = value;
-    }
-
-    get width() 
-    {
-        return this.#width;
-    }
-
-    set width(width)
-    {
-        this.#width = width;
-    }
-
-    get height()
-    {
-        return this.#height;
-    }
-
-    set height(height)
-    {
-        this.#height = height;
-    }
-
-    get x()
-    {
-        return this.#x;
-    }
-
-    set x(value)
-    {
-        this.#x = value;
-    }
-
-    get y()
-    {
-        return this.#y;
-    }
-
-    set y(value)
-    {
-        this.#y = value;
-    }
-
-    get context()
-    {
-        return this.#context;
-    }
-
-    set context(value)
-    {
-        this.#context = value;
-    }
-
-    get boundingBox()
-    {
-        return this.#boundingBox;
-    }
-
-    set boundingBox(value)
-    {
-        this.#boundingBox = value;
-    }
 }
 
 /**
@@ -449,17 +370,17 @@ class Point
  */
 class BoundingBox
 {
-    #topleft = new Point(); 
-    #topright = new Point();
-    #bottomleft = new Point();
-    #bottomright = new Point();
+    topleft = new Point(); 
+    topright = new Point();
+    bottomleft = new Point();
+    bottomright = new Point();
 
     constructor(topleft, topright, bottomleft, bottomright)
     {
-        this.#topleft = topleft || new Point();
-        this.#topright = topright || new Point();
-        this.#bottomleft = bottomleft || new Point();
-        this.#bottomright = bottomright || new Point();
+        this.topleft = topleft || new Point();
+        this.topright = topright || new Point();
+        this.bottomleft = bottomleft || new Point();
+        this.bottomright = bottomright || new Point();
     }
 
     /**
@@ -503,45 +424,5 @@ class BoundingBox
     {
         return (this.topleft.x <= x && this.topleft.y <= y) &&
                 (this.bottomright.x >= x && this.bottomright.y >= y);
-    }
-
-    get topleft()
-    {
-        return this.#topleft;
-    }
-
-    set topleft(value)
-    {
-        this.#topleft = value;
-    }
-
-    get topright()
-    {
-        return this.#topright;
-    }
-
-    set topright(value)
-    {
-        this.#topright = value;
-    }
-
-    get bottomleft()
-    {
-        return this.#bottomleft;
-    }
-
-    set bottomleft(value)
-    {
-        this.#bottomleft = value;
-    }
-
-    get bottomright()
-    {
-        return this.#bottomright;
-    }
-
-    set bottomright(value)
-    {
-        this.#bottomright = value;
     }
 }

@@ -5,6 +5,13 @@ class MediaObject
 {
     element = undefined;
     source = '';
+    index = 0;  // All media will be a playlist item. Let everything know where it is.
+    
+    // Callbacks
+    onMediaEndedCallback = undefined;
+    onPlayCallback = undefined;
+    onPauseCallback = undefined;
+    onLoadedDataCallback = undefined;
 
     constructor(element)
     {
@@ -14,6 +21,111 @@ class MediaObject
         var item = this.element;
         var sourceItem = item.querySelector('source');
         this.source = sourceItem.src;
+    }
+
+    /**
+     * Convert the json version of a media object into the appropriate
+     * media object in code.
+     * @param {MediaJSONObject} data JSON response to qplaylist.json
+     * @returns a media object to play/stop/get duration/etc...
+     */
+    static ConvertToType(data)
+    {
+        let mediaElement;
+        switch(data.Type)
+        {
+            case "AUDIO":
+            {
+                mediaElement = document.createElement('img');
+                mediaElement.id = "QPImage";
+                mediaElement.src = data.Src;
+                
+                return new MediaObject(mediaElement);
+            }
+            case "VIDEO":
+            {
+                mediaElement = document.createElement('video');
+                mediaElement.id = "QPVideo";
+                mediaElement.width = data.Width || 1920;
+                mediaElement.height =  data.Height || 1080;
+                let srcElement = document.createElement('source');
+                srcElement.src = data.Src;
+                srcElement.type = "video/mp4";
+                mediaElement.appendChild(srcElement);
+                
+                // The domain would be used here to determine further the appropriate object
+                
+                const mediaObject = new MediaObject(mediaElement);
+                // Set up listeners
+                mediaElement.addEventListener('ended', mediaObject.onMediaEnded.bind(mediaObject));
+                mediaElement.addEventListener('play', mediaObject.onPlay.bind(mediaObject));
+                mediaElement.addEventListener('pause', mediaObject.onPause.bind(mediaObject));
+                return mediaObject;
+            }
+            case "AUDIO":
+            {
+                break;
+            }
+        }
+
+        return undefined;
+    }
+
+    /**
+     * Convert a third-party type string to a type we support
+     * @param {string} typeString the type string
+     */
+    static GetTypeFromString(typeString)
+    {
+        var retType = "unknown";
+        switch (typeString)
+        {
+            case "video/mp4":
+            {
+                retType = "VIDEO";
+                break;
+            }
+
+            default:
+            {
+                console.warn(`Attempting to get type from invalid element ${element} or skipType ${skipType}`)
+                break;
+            }
+        }
+        return retType;
+    }
+
+    /**
+     * Invoke a browser download for href
+     * @param {string} href Location of download
+     * @param {Function} callback What to do on click
+     */
+    static InvokeDownload(href, callback)
+    {
+        var invoker = document.createElement('a');
+        invoker.href = href;
+        invoker.download = href;
+        invoker.style.display = 'none';
+        document.body.appendChild(invoker);
+        invoker.onclick = (event) => {
+            callback(event);
+        };
+        invoker.click();
+        document.body.removeChild(invoker);
+        console.debug('Downloading video');
+    }
+
+    /**
+     * Attach this element to the dom
+     */
+    attachToDOM()
+    {
+        let dupeCheck = document.getElementById(this.element.id);
+        if (!dupeCheck && this.element != undefined)
+        {
+            var cv = document.getElementById(CANVAS_ID);
+            document.body.insertBefore(this.element, cv);
+        }
     }
 
     /**
@@ -39,14 +151,7 @@ class MediaObject
     {
         var item = this.element;
         var sourceItem = item.querySelector('source');
-        var invoker = document.createElement('a');
-        invoker.href = sourceItem.src;
-        invoker.download = sourceItem.src;
-        invoker.style.display = 'none';
-        document.body.appendChild(invoker);
-        invoker.click();
-        document.body.removeChild(invoker);
-        console.debug('Downloading video');
+        MediaObject.InvokeDownload(sourceItem.src);
     }
 
     /**
@@ -80,6 +185,14 @@ class MediaObject
     }
 
     /**
+     * Set the media current time to zero and other cleanup
+     */
+    start()
+    {
+        this.skipTo(0);
+    }
+
+    /**
      * Pause the media
      */
     pause()
@@ -98,6 +211,24 @@ class MediaObject
         if (this.element.play)
         {
             this.element.play();
+        }
+    }
+
+    /**
+     * Toggle pause state
+     */
+    togglePlayPause()
+    {
+        if (this.element.play && this.element.pause)
+        {
+            if (this.element.paused)
+            {
+                this.element.play();
+            }
+            else
+            {
+                this.element.pause();
+            }
         }
     }
 
@@ -155,6 +286,51 @@ class MediaObject
             {
                 return this.getLocalFilename(this.source);
             }
+        }
+    }
+
+    /**
+     * Play the beginning of the media
+     */
+    playBeginning()
+    {
+        this.start();
+        this.play();
+    }
+
+    /**
+     * Event when the end of playback has been reached
+     * @param {Event} event
+     */
+    onMediaEnded(event)
+    {
+        if (this.onMediaEndedCallback != undefined)
+        {
+            this.onMediaEndedCallback(event);
+        }
+    }
+
+    /**
+     * Event when media plays
+     * @param {Event} event
+     */
+    onPlay(event)
+    {
+        if (this.onPlayCallback)
+        {
+            this.onPlayCallback(event);
+        }
+    }
+
+    /**
+     * Event when media paused
+     * @param {Event} event
+     */
+    onPause(event)
+    {
+        if (this.onPauseCallback)
+        {
+            this.onPauseCallback(event);
         }
     }
 
